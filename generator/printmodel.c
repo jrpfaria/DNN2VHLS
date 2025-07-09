@@ -101,7 +101,7 @@ void* printmodel()
                             sprintf(input, "L%d_Results%dC%d", layer-1, kernel, channel);
                             break;
                         default:
-                            sprintf(input, layer == 1 ? "*in" : "L%d_%s%d", thisLayer, (aTypes[thisLayer] != NONE) ? "Out" : "Forward", kernel++);
+                            sprintf(input, layer == 1 ? "*in" : "L%d_%s%d", thisLayer, (aTypes[thisLayer-1] != NONE) ? "Out" : "Forward", kernel++);
                             break;
                     }
                 else

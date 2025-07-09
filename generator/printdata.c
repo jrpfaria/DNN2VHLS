@@ -7,9 +7,7 @@ void* printdata()
     fp = fopen("cnn.hpp", "w");
 
     fprintf(fp, "#pragma once\n");
-    
     fprintf(fp, "#include \"ap_fixed.h\"\n\n");
-
     fprintf(fp, "typedef ap_fixed<%d, %d, AP_RND_CONV, AP_WRAP> modelData;\n\n", FixedPointWidth, IntegerPointWidth);
 
     for (int layer = 1; layer <= nLayers; layer++)
@@ -60,7 +58,7 @@ void* printdata()
         {
             fprintf(fp, "#define L%d_kWidth  %d\n", layer, kWidths[thisLayer]);
             fprintf(fp, "#define L%d_kHeight %d\n", layer, kHeights[thisLayer]);
-            fprintf(fp, "#define L%d_kSize   L%d_kWidth * L%d_kHeight\n", layer, layer, layer);
+            fprintf(fp, "#define L%d_kSize   (L%d_kWidth * L%d_kHeight)\n", layer, layer, layer);
         }
     }
 
@@ -97,7 +95,7 @@ void* printdata()
     }
 
     fprintf(fp, "#define ResultWidth  futureWidth(L%d_InputWidth, L%d_Padding, L%d_kWidth, L%d_hStride)\n", nLayers, nLayers, nLayers, nLayers);
-    fprintf(fp, "#define ResultHeight futureHeight(L%d_InputHeight, L%d_Padding, L%d_kHeight, L%d_hStride)\n\n", nLayers, nLayers, nLayers, nLayers);
+    fprintf(fp, "#define ResultHeight futureHeight(L%d_InputHeight, L%d_Padding, L%d_kHeight, L%d_vStride)\n\n", nLayers, nLayers, nLayers, nLayers);
 
     for (int layer = 1; layer <= nLayers; layer++)
     {
