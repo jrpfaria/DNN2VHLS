@@ -27,21 +27,8 @@ void* printdata()
         }   
     
 
-    fprintf(fp, "#include \"data/datain.h\"\n");
-    fprintf(fp, "#include \"data/dataout.h\"\n");
-
-    fprintf(fp, "\n");
-
-    fprintf(fp, "#include \"data/Kernels.h\"\n");
-    fprintf(fp, "#include \"data/Biases.h\"\n");
+    fprintf(fp, "#include \"parameters.h\"\n");
     
-    for (int layer = 1; layer <= nLayers; layer++)
-        if (aTypes[thisLayer] == ELU || aTypes[thisLayer] == LEAKY)
-        {
-            fprintf(fp, "#include \"data/Alphas.h\"\n");
-            break;
-        }
-
     fprintf(fp, "\n");
 
     fprintf(fp, "// Padding for the layers\n");

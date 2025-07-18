@@ -68,11 +68,8 @@ void* printcomputation()
                     fprintf(fp, "#pragma HLS PIPELINE II=%d\n", IIValue);
                     fprintf(fp, "#pragma HLS INLINE off\n");
 #endif
-                    if(lTypes[thisLayer] == CONV)
-                        fprintf(fp, "\tstatic const modelData f[L%d_kSize] = L%d_Ch%d_Kernel%d;\n", layer, layer, channel, kernel);
-                    if(lTypes[thisLayer] == FC)
-                        fprintf(fp, "\tstatic const modelData w = L%d_Ch%d_Weight%d;\n", layer, channel, kernel);
-
+                    if(lTypes[thisLayer] == CONV || lTypes[thisLayer] == FC)
+                        fprintf(fp, "\tstatic const modelData f[L%d_kSize] = L%dKernel%dC%d;\n", layer, layer, kernel, channel);
 #ifdef HLS
                     if(lTypes[thisLayer] == CONV)
                         fprintf(fp, "#pragma HLS ARRAY_PARTITION variable=f dim=1 type=complete\n");
@@ -106,7 +103,7 @@ void* printcomputation()
                             }
                             break;
                         case FC:
-                            fprintf(fp, "\treturn in * w;");
+                            fprintf(fp, "\treturn in * f;");
                             break;
                         case CONV:
                         default:

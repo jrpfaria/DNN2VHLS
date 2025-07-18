@@ -1,4 +1,4 @@
 #!/bin/bash
-rm -f computations.* datacontrol.* datatailor.* model.* cnn.hpp
+rm -f computations.* datacontrol.* datatailor.* model.* cnn.hpp parameters.h
 
 echo "Generated files deleted successfully!"

@@ -1,4 +1,5 @@
 import subprocess
+import csv
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -594,20 +595,161 @@ class NeuralNetworkConfigApp:
         # result = subprocess.run(['run the actual program --params^'], capture_output=True, text=True)        
     
         cfg = self.complete_configuration
-        print(f"LayerTypes = {cfg['LayerConfiguration']['Type']}")
-        print(f"ActivationTypes = {cfg['LayerConfiguration']['Activations']}")
-        print(f"Neurons = {cfg['LayerConfiguration']['Neurons']}")
-        print(f"Padding = {cfg['LayerConfiguration']['Padding']}")
-        print(f"kWidths = {cfg['LayerConfiguration']['KernelWidth']}")
-        print(f"kHeights = {cfg['LayerConfiguration']['KernelHeight']}")
-        print(f"vStrides = {cfg['LayerConfiguration']['VerticalStride']}")
-        print(f"hStrides = {cfg['LayerConfiguration']['HorizontalStride']}")
-        print(f"DataWidth = {cfg['ModelSpecification']['DataWidth']}")
-        print(f"IntegerBits = {cfg['ModelSpecification']['IntegerBits']}")
-        print(f"InputWidth = {cfg['ModelSpecification']['InputWidth']}")
-        print(f"InputHeight = {cfg['ModelSpecification']['InputHeight']}")
-        print(f"IIValue = {cfg['ModelSpecification']['InitiationInverval']}")
-        print(f"Parameters = {cfg['LearnableParameters']}")
+
+        layer_types = cfg['LayerConfiguration']['Type']
+        activation_types = cfg['LayerConfiguration']['Activation']
+        neurons = cfg['LayerConfiguration']['Neurons']
+        paddings = cfg['LayerConfiguration']['Padding']
+        kWidths = cfg['LayerConfiguration']['KernelWidth']
+        kHeights = cfg['LayerConfiguration']['KernelHeight']
+        vStrides = cfg['LayerConfiguration']['VerticalStride']
+        hStrides = cfg['LayerConfiguration']['HorizontalStride']
+        data_width = cfg['ModelSpecification']['DataWidth']
+        int_bits = cfg['ModelSpecification']['IntegerBits']
+        in_width = cfg['ModelSpecification']['InputWidth']
+        in_height = cfg['ModelSpecification']['InputHeight']
+        ii_value = cfg['ModelSpecification']['InitiationInverval']
+        n_layers = len(layer_types)
+
+        layer_defs = []
+        for i in range(n_layers):
+            layer_defs.append({
+                "out_channels": neurons[i],
+                "in_channels": 1 if i == 0 else neurons[i-1],
+                "k_w": kWidths[i],
+                "k_h": kHeights[i],
+            })
+
+        def c_array(arr):
+            return '{' + ', '.join(str(x) for x in arr) + '}'
+
+        with open("generator/options.h", "w") as f:
+            def w(line=""):
+                f.write(line + "\n")
+
+            w('typedef enum { FC, CONV, MAXP, MINP, AVGP } enumLayerTypes;')
+            w('typedef enum { RELU, ELU, LEAKY, CLIPPED, SWISH, SOFTPLUS, TANH, SIGMOID, NONE } enumActivationTypes;\n')
+
+            w(f"#include \"parameters.h\"\n")
+
+            # Number of layers
+            w(f"#define nLayers {n_layers}")
+            w(f"#define layerTypes {c_array(layer_types)}")
+            w(f"#define activationTypes {c_array(activation_types)}\n")
+
+            # Kernels and channels
+            w(f"#define kernelsPerLayer {c_array(neurons)}")
+            channels = [1] + neurons[:-1]
+            w(f"#define channelsPerLayer {c_array(channels)}\n")
+
+            # Padding
+            for i in range(n_layers):
+                w(f"#define L{i+1}_Padding {paddings[i]}")
+            w(f"#define Paddings {c_array([f'L{i+1}_Padding' for i in range(n_layers)])}\n")
+
+            # Kernel sizes
+            for i in range(n_layers):
+                w(f"#define L{i+1}_kWidth {kWidths[i]}")
+                w(f"#define L{i+1}_kHeight {kHeights[i]}")
+                w(f"#define L{i+1}_kSize (L{i+1}_kWidth * L{i+1}_kHeight)")
+            w(f"#define kernelWidths {c_array([f'L{i+1}_kWidth' for i in range(n_layers)])}")
+            w(f"#define kernelHeights {c_array([f'L{i+1}_kHeight' for i in range(n_layers)])}")
+            w(f"#define kernelSizes {c_array([f'L{i+1}_kSize' for i in range(n_layers)])}\n")
+
+            # Strides
+            for i in range(n_layers):
+                w(f"#define L{i+1}_vStride {vStrides[i]}")
+            w(f"#define vStrides {c_array([f'L{i+1}_vStride' for i in range(n_layers)])}")
+            for i in range(n_layers):
+                w(f"#define L{i+1}_hStride {hStrides[i]}")
+            w(f"#define hStrides {c_array([f'L{i+1}_hStride' for i in range(n_layers)])}\n")
+
+            # Input dimensions
+            w(f"#define InputWidth {int(in_width)}")
+            w(f"#define InputHeight {int(in_height)}\n")
+
+            # Fixed point info
+            w(f"#define FixedPointWidth {int(data_width)}")
+            w(f"#define IntegerPointWidth {int(int_bits)}\n")
+
+            # II Value
+            w(f"#define IIValue {int(ii_value)}")
+
+        with open(filename, newline='') as csvR:
+            reader = csv.reader(csvR)
+            rows = [row for row in reader if any(cell.strip() for cell in row)]  # remove empty lines
+
+            # Step 1: Count how many kernel, bias, and alpha rows we need
+            total_kernels = 0
+            total_biases = 0
+            total_alphas = 0
+            for layer_num, layer in enumerate(layer_defs, start=1):
+                out_ch = layer["out_channels"]
+                in_ch = layer["in_channels"]
+                total_kernels += out_ch * in_ch
+                total_biases += out_ch
+                if activation_types[layer_num - 1].upper() in ("LRELU", "PRELU"):
+                    total_alphas += 1
+
+            # Step 2: Split CSV rows
+            kernel_rows = rows[:total_kernels]
+            bias_rows = rows[total_kernels : total_kernels + total_biases]
+            alpha_rows = rows[total_kernels + total_biases :]
+
+            # Step 3: Generate header file
+            kernel_idx = 0
+            bias_idx = 0
+            alpha_idx = 0
+
+            with open("generator/parameters.h", "w") as kf:
+                for layer_num, layer in enumerate(layer_defs, start=1):
+                    out_ch = layer["out_channels"]
+                    in_ch = layer["in_channels"]
+
+                    # === Kernels ===
+                    kf.write(f"// Layer {layer_num} Kernels\n")
+                    for oc in range(out_ch):
+                        for ic in range(in_ch):
+                            define_name = f"L{layer_num}Kernel{oc}C{ic}"
+                            if kernel_idx < len(kernel_rows):
+                                weights = [w.strip() for w in kernel_rows[kernel_idx] if w.strip()]
+                                kf.write(f"#define {define_name} {{{', '.join(weights)}}}\n")
+                                kernel_idx += 1
+                            else:
+                                kf.write(f"#define {define_name} {{}}\n")
+                    kf.write("\n")
+
+                    # === Biases ===
+                    kf.write(f"// Layer {layer_num} Biases\n")
+                    for oc in range(out_ch):
+                        if bias_idx < len(bias_rows):
+                            val = bias_rows[bias_idx][0].strip()
+                            kf.write(f"#define L{layer_num}Bias{oc} {val}\n")
+                            bias_idx += 1
+                        else:
+                            kf.write(f"#define L{layer_num}Bias{oc} 0.0\n")
+                    kf.write("\n")
+
+                    # === Alphas (only one per layer) ===
+                    if activation_types[layer_num - 1].upper() in ("LEAKY", "ELU", "CLIPPED"):
+                        if alpha_idx < len(alpha_rows):
+                            val = alpha_rows[alpha_idx][0].strip()
+                            kf.write(f"#define L{layer_num}Alpha {val}\n")
+                            alpha_idx += 1
+                        else:
+                            kf.write(f"#define L{layer_num}Alpha 0.0\n")
+                    kf.write("\n")
+            
+            # run the generator script
+            subprocess.run(['bash', './generate.sh'], check=True)
+            # Show success message
+            messagebox.showinfo("Success", "Configuration completed and files generated successfully!")
+            
+            # copy parameters
+            subprocess.run(['cp', 'generator/parameters.h', 'parameters.h'], check=True)
+            
+            # exit the application
+            self.root.quit()
 
 # Create and run the application
 if __name__ == "__main__":
