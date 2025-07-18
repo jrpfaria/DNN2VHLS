@@ -2,6 +2,12 @@
 #include <unistd.h>
 #include "model.hpp"
 
+// This code provides a test bench template for the CNN model.
+
+// The following includes are necessary to ensure proper functionality.
+// #include "dataIn.h" // Data for input
+// #include "dataOut.h" // Data for expected results
+
 int main()
 {
     char valid;
