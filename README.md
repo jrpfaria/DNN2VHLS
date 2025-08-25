@@ -21,8 +21,10 @@ The workflow is:
 .
 ├── generator/          # Internal source files for the generator
 ├── dnn2vhls.py         # GUI tool (requires python3-tk on Ubuntu)
-├── param.csv           # Example + template file for specifying layer parameters
+├── generate.sh         # Script used by the GUI to generate the files
+├── param.csv           # File specifying the learnable parameters
 ├── clean.sh            # Utility script to remove generated output files
+├── testBench.cpp       # Template file for C Synthesis and C/RTL Co-Simulation in Vitis HLS 
 └── README.md           # This file
 ```
 
