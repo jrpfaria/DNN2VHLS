@@ -8,7 +8,7 @@ It is intended for **FPGA acceleration workflows** (specifically supported by Vi
 
 The workflow is:
 
-1. Define your network’s **layer parameters (LPs)** in `param.csv`.
+1. Define your network’s **learnable parameters (LPs)** in `param.csv`.
 2. Run the **GUI tool** (`dnn2vhls.py`) and describe the intended architecture.
 3. Move the generated files to you Vitis HLS workspace and implement it.
 4. Integrate the generated files with your FPGA project.
