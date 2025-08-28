@@ -710,7 +710,7 @@ class NeuralNetworkConfigApp:
                     kf.write(f"// Layer {layer_num} Kernels\n")
                     for oc in range(out_ch):
                         for ic in range(in_ch):
-                            define_name = f"L{layer_num}Kernel{oc}C{ic}"
+                            define_name = f"L{layer_num}_Kernel{oc}C{ic}"
                             if kernel_idx < len(kernel_rows):
                                 weights = [w.strip() for w in kernel_rows[kernel_idx] if w.strip()]
                                 kf.write(f"#define {define_name} {{{', '.join(weights)}}}\n")
@@ -724,20 +724,20 @@ class NeuralNetworkConfigApp:
                     for oc in range(out_ch):
                         if bias_idx < len(bias_rows):
                             val = bias_rows[bias_idx][0].strip()
-                            kf.write(f"#define L{layer_num}Bias{oc} {val}\n")
+                            kf.write(f"#define L{layer_num}_Bias{oc} {val}\n")
                             bias_idx += 1
                         else:
-                            kf.write(f"#define L{layer_num}Bias{oc} 0.0\n")
+                            kf.write(f"#define L{layer_num}_Bias{oc} 0.0\n")
                     kf.write("\n")
 
                     # === Alphas (only one per layer) ===
                     if activation_types[layer_num - 1].upper() in ("LEAKY", "ELU", "CLIPPED"):
                         if alpha_idx < len(alpha_rows):
                             val = alpha_rows[alpha_idx][0].strip()
-                            kf.write(f"#define L{layer_num}Alpha {val}\n")
+                            kf.write(f"#define L{layer_num}_Alpha {val}\n")
                             alpha_idx += 1
                         else:
-                            kf.write(f"#define L{layer_num}Alpha 0.0\n")
+                            kf.write(f"#define L{layer_num}_Alpha 0.0\n")
                     kf.write("\n")
             
             # run the generator script
@@ -755,4 +755,5 @@ class NeuralNetworkConfigApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = NeuralNetworkConfigApp(root)
+
     root.mainloop()
