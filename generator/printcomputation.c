@@ -69,7 +69,7 @@ void* printcomputation()
                     fprintf(fp, "#pragma HLS INLINE off\n");
 #endif
                     if(lTypes[thisLayer] == CONV || lTypes[thisLayer] == FC)
-                        fprintf(fp, "\tstatic const modelData f[L%d_kSize] = L%dKernel%dC%d;\n", layer, layer, kernel, channel);
+                        fprintf(fp, "\tstatic const modelData f[L%d_kSize] = L%d_Kernel%dC%d;\n", layer, layer, kernel, channel);
 #ifdef HLS
                     if(lTypes[thisLayer] == CONV)
                         fprintf(fp, "#pragma HLS ARRAY_PARTITION variable=f dim=1 type=complete\n");
