@@ -15,6 +15,19 @@ The workflow is:
 
 ---
 
+## 📚 Citation
+
+If you use this tool, please cite:
+
+J. R. Faria, F. D. L. Coutinho, and A. S. R. Oliveira,
+"Using Automatic Code Generation to Streamline the Real-Time FPGA Deployment of DNNs at the Edge,"
+in *Proc. 2025 32nd IEEE Int. Conf. on Electronics, Circuits and Systems (ICECS)*,
+Marrakech, Morocco, Nov. 17–19, 2025, doi: 10.1109/ICECS66544.2025.11270598.
+
+GitHub: https://github.com/jrpfaria/DNN2VHLS
+
+---
+
 ## 📂 Repository Structure
 
 ```
